@@ -37,6 +37,7 @@ func (p *TCPPeer) readLoop(rpcCh chan RPC) {
 	}
 }
 
+// transport protocol
 type TCPTransport struct {
 	peerCh     chan *TCPPeer
 	listenAddr string
