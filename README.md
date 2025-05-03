@@ -26,6 +26,12 @@ Executing this command will create a bin folder in the root of the project.
 make test
 ```
 
+## Running
+
+```
+make run
+```
+
 ## Usage
 
 ```
