@@ -38,6 +38,14 @@ make run
 TODO
 ```
 
+## On a VM
+
+---
+sudo apt install git
+sudo apt install golang-go
+sudo apt install make
+---
+
 ## License
 
 The project is currently Licensed under the MIT License.
