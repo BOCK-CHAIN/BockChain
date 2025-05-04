@@ -38,23 +38,24 @@ make run
 TODO
 ```
 
-## On a VM
+## Install git 
 
----
+```
 sudo apt install git
----
+```
 
-## Installing Go
+## Install Go 
 
----
+```
 sudo apt install golang-go
----
+```
 
-# Install Make
+## Install Go 
 
----
+```
 sudo apt install make
----
+```
+
 
 ## License
 
