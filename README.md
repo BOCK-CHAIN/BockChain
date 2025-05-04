@@ -42,7 +42,17 @@ TODO
 
 ---
 sudo apt install git
+---
+
+## Installing Go
+
+---
 sudo apt install golang-go
+---
+
+# Install Make
+
+---
 sudo apt install make
 ---
 
