@@ -50,7 +50,7 @@ sudo apt install git
 sudo apt install golang-go
 ```
 
-## Install Go 
+## Install Make
 
 ```
 sudo apt install make
