@@ -1,12 +1,12 @@
-package core
+package blockchain
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/anthdm/projectx/crypto"
-	"github.com/anthdm/projectx/types"
 	"github.com/go-kit/log"
+	"github.com/iPlatinuum/BockChain/crypto_utils"
+	"github.com/iPlatinuum/BockChain/types"
 )
 
 type Blockchain struct {
@@ -35,7 +35,7 @@ func NewBlockchain(l log.Logger, genesis *Block) (*Blockchain, error) {
 	// TODO: read this from disk later on
 	accountState := NewAccountState()
 
-	coinbase := crypto.PublicKey{}
+	coinbase := crypto_utils.PublicKey{}
 	accountState.CreateAccount(coinbase.Address())
 
 	bc := &Blockchain{

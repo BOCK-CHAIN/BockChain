@@ -1,4 +1,4 @@
-package crypto
+package crypto_utils
 
 import (
 	"crypto/ecdsa"
@@ -9,7 +9,7 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/anthdm/projectx/types"
+	"github.com/iPlatinuum/BockChain/types"
 )
 
 type PrivateKey struct {

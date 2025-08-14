@@ -1,21 +1,21 @@
-package core
+package blockchain
 
 import (
 	"bytes"
 	"encoding/gob"
 	"testing"
 
-	"github.com/anthdm/projectx/crypto"
-	"github.com/anthdm/projectx/types"
+	"github.com/iPlatinuum/BockChain/crypto_utils"
+	"github.com/iPlatinuum/BockChain/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestVerifyTransactionWithTamper(t *testing.T) {
 	tx := NewTransaction(nil)
 
-	fromPrivKey := crypto.GeneratePrivateKey()
-	toPrivKey := crypto.GeneratePrivateKey()
-	hackerPrivKey := crypto.GeneratePrivateKey()
+	fromPrivKey := crypto_utils.GeneratePrivateKey()
+	toPrivKey := crypto_utils.GeneratePrivateKey()
+	hackerPrivKey := crypto_utils.GeneratePrivateKey()
 
 	tx.From = fromPrivKey.PublicKey()
 	tx.To = toPrivKey.PublicKey()
@@ -35,7 +35,7 @@ func TestNFTTransaction(t *testing.T) {
 		MetaData: []byte("The beginning of a new collection"),
 	}
 
-	privKey := crypto.GeneratePrivateKey()
+	privKey := crypto_utils.GeneratePrivateKey()
 	tx := &Transaction{
 		TxInner: collectionTx,
 	}
@@ -51,8 +51,8 @@ func TestNFTTransaction(t *testing.T) {
 }
 
 func TestNativeTransferTransaction(t *testing.T) {
-	fromPrivKey := crypto.GeneratePrivateKey()
-	toPrivKey := crypto.GeneratePrivateKey()
+	fromPrivKey := crypto_utils.GeneratePrivateKey()
+	toPrivKey := crypto_utils.GeneratePrivateKey()
 	tx := &Transaction{
 		To:    toPrivKey.PublicKey(),
 		Value: 666,
@@ -62,7 +62,7 @@ func TestNativeTransferTransaction(t *testing.T) {
 }
 
 func TestSignTransaction(t *testing.T) {
-	privKey := crypto.GeneratePrivateKey()
+	privKey := crypto_utils.GeneratePrivateKey()
 	tx := &Transaction{
 		Data: []byte("foo"),
 	}
@@ -72,7 +72,7 @@ func TestSignTransaction(t *testing.T) {
 }
 
 func TestVerifyTransaction(t *testing.T) {
-	privKey := crypto.GeneratePrivateKey()
+	privKey := crypto_utils.GeneratePrivateKey()
 	tx := &Transaction{
 		Data: []byte("foo"),
 	}
@@ -80,7 +80,7 @@ func TestVerifyTransaction(t *testing.T) {
 	assert.Nil(t, tx.Sign(privKey))
 	assert.Nil(t, tx.Verify())
 
-	otherPrivKey := crypto.GeneratePrivateKey()
+	otherPrivKey := crypto_utils.GeneratePrivateKey()
 	tx.From = otherPrivKey.PublicKey()
 
 	assert.NotNil(t, tx.Verify())
@@ -98,7 +98,7 @@ func TestTxEncodeDecode(t *testing.T) {
 }
 
 func randomTxWithSignature(t *testing.T) *Transaction {
-	privKey := crypto.GeneratePrivateKey()
+	privKey := crypto_utils.GeneratePrivateKey()
 	tx := Transaction{
 		Data: []byte("foo"),
 	}

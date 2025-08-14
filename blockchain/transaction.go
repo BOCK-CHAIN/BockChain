@@ -1,12 +1,12 @@
-package core
+package blockchain
 
 import (
 	"encoding/gob"
 	"fmt"
 	"math/rand"
 
-	"github.com/anthdm/projectx/crypto"
-	"github.com/anthdm/projectx/types"
+	"github.com/iPlatinuum/BockChain/crypto_utils"
+	"github.com/iPlatinuum/BockChain/types"
 )
 
 type TxType byte
@@ -26,8 +26,8 @@ type MintTx struct {
 	NFT             types.Hash
 	Collection      types.Hash
 	MetaData        []byte
-	CollectionOwner crypto.PublicKey
-	Signature       crypto.Signature
+	CollectionOwner crypto_utils.PublicKey
+	Signature       crypto_utils.Signature
 }
 
 type Transaction struct {
@@ -35,10 +35,10 @@ type Transaction struct {
 	TxInner any
 	// Any arbitrary data for the VM
 	Data      []byte
-	To        crypto.PublicKey
+	To        crypto_utils.PublicKey
 	Value     uint64
-	From      crypto.PublicKey
-	Signature *crypto.Signature
+	From      crypto_utils.PublicKey
+	Signature *crypto_utils.Signature
 	Nonce     int64
 
 	// cached version of the tx data hash
@@ -59,7 +59,7 @@ func (tx *Transaction) Hash(hasher Hasher[*Transaction]) types.Hash {
 	return tx.hash
 }
 
-func (tx *Transaction) Sign(privKey crypto.PrivateKey) error {
+func (tx *Transaction) Sign(privKey crypto_utils.PrivateKey) error {
 	hash := tx.Hash(TxHasher{})
 	sig, err := privKey.Sign(hash.ToSlice())
 	if err != nil {

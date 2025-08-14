@@ -3,8 +3,8 @@ package network
 import (
 	"testing"
 
-	"github.com/anthdm/projectx/core"
-	"github.com/anthdm/projectx/util"
+	"github.com/iPlatinuum/BockChain/blockchain"
+	"github.com/iPlatinuum/BockChain/util"
 	"github.com/stretchr/testify/assert"
 )
 

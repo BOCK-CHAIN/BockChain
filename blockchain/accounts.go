@@ -1,11 +1,11 @@
-package core
+package blockchain
 
 import (
 	"errors"
 	"fmt"
 	"sync"
 
-	"github.com/anthdm/projectx/types"
+	"github.com/iPlatinuum/BockChain/types"
 )
 
 var (

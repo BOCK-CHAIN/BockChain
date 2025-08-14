@@ -1,4 +1,4 @@
-package core
+package blockchain
 
 type Storage interface {
 	Put(*Block) error

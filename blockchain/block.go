@@ -1,4 +1,4 @@
-package core
+package blockchain
 
 import (
 	"bytes"
@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthdm/projectx/crypto"
-	"github.com/anthdm/projectx/types"
+	"github.com/iPlatinuum/BockChain/crypto_utils"
+	"github.com/iPlatinuum/BockChain/types"
 )
 
 type Header struct {
@@ -31,8 +31,8 @@ type Block struct {
 	*Header
 
 	Transactions []*Transaction
-	Validator    crypto.PublicKey
-	Signature    *crypto.Signature
+	Validator    crypto_utils.PublicKey
+	Signature    *crypto_utils.Signature
 
 	// Cached version of the header hash
 	hash types.Hash
@@ -68,7 +68,7 @@ func (b *Block) AddTransaction(tx *Transaction) {
 	b.DataHash = hash
 }
 
-func (b *Block) Sign(privKey crypto.PrivateKey) error {
+func (b *Block) Sign(privKey crypto_utils.PrivateKey) error {
 	sig, err := privKey.Sign(b.Header.Bytes())
 	if err != nil {
 		return err

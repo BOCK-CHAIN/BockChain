@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthdm/projectx/core"
-	"github.com/anthdm/projectx/crypto"
-	"github.com/anthdm/projectx/types"
+	"github.com/iPlatinuum/BockChain/blockchain"
+	"github.com/iPlatinuum/BockChain/crypto_utils"
+	"github.com/iPlatinuum/BockChain/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,38 +21,38 @@ func RandomHash() types.Hash {
 	return types.HashFromBytes(RandomBytes(32))
 }
 
-// NewRandomTransaction return a new random transaction whithout signature.
-func NewRandomTransaction(size int) *core.Transaction {
-	return core.NewTransaction(RandomBytes(size))
+// NewRandomTransaction returns a new random transaction without signature.
+func NewRandomTransaction(size int) *blockchain.Transaction {
+	return blockchain.NewTransaction(RandomBytes(size))
 }
 
-func NewRandomTransactionWithSignature(t *testing.T, privKey crypto.PrivateKey, size int) *core.Transaction {
+func NewRandomTransactionWithSignature(t *testing.T, privKey crypto_utils.PrivateKey, size int) *blockchain.Transaction {
 	tx := NewRandomTransaction(size)
 	assert.Nil(t, tx.Sign(privKey))
 	return tx
 }
 
-func NewRandomBlock(t *testing.T, height uint32, prevBlockHash types.Hash) *core.Block {
-	txSigner := crypto.GeneratePrivateKey()
+func NewRandomBlock(t *testing.T, height uint32, prevBlockHash types.Hash) *blockchain.Block {
+	txSigner := crypto_utils.GeneratePrivateKey()
 	tx := NewRandomTransactionWithSignature(t, txSigner, 100)
-	header := &core.Header{
+	header := &blockchain.Header{
 		Version:       1,
 		PrevBlockHash: prevBlockHash,
 		Height:        height,
 		Timestamp:     time.Now().UnixNano(),
 	}
-	b, err := core.NewBlock(header, []*core.Transaction{tx})
+	b, err := blockchain.NewBlock(header, []*blockchain.Transaction{tx})
 	assert.Nil(t, err)
-	dataHash, err := core.CalculateDataHash(b.Transactions)
+
+	dataHash, err := blockchain.CalculateDataHash(b.Transactions)
 	assert.Nil(t, err)
 	b.Header.DataHash = dataHash
 
 	return b
 }
 
-func NewRandomBlockWithSignature(t *testing.T, pk crypto.PrivateKey, height uint32, prevHash types.Hash) *core.Block {
+func NewRandomBlockWithSignature(t *testing.T, pk crypto_utils.PrivateKey, height uint32, prevHash types.Hash) *blockchain.Block {
 	b := NewRandomBlock(t, height, prevHash)
 	assert.Nil(t, b.Sign(pk))
-
 	return b
 }

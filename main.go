@@ -7,15 +7,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anthdm/projectx/core"
-	"github.com/anthdm/projectx/crypto"
-	"github.com/anthdm/projectx/network"
-	"github.com/anthdm/projectx/types"
-	"github.com/anthdm/projectx/util"
+	"github.com/iPlatinuum/BockChain/blockchain"
+	"github.com/iPlatinuum/BockChain/crypto_utils"
+	"github.com/iPlatinuum/BockChain/network"
+	"github.com/iPlatinuum/BockChain/types"
+	"github.com/iPlatinuum/BockChain/util"
 )
 
 func main() {
-	validatorPrivKey := crypto.GeneratePrivateKey()
+	validatorPrivKey := crypto_utils.GeneratePrivateKey()
 	localNode := makeServer("LOCAL_NODE", &validatorPrivKey, ":3000", []string{":4000"}, ":9000")
 	go localNode.Start()
 
@@ -27,36 +27,25 @@ func main() {
 
 	go func() {
 		time.Sleep(11 * time.Second)
-
 		lateNode := makeServer("LATE_NODE", nil, ":6000", []string{":4000"}, "")
 		go lateNode.Start()
 	}()
 
 	time.Sleep(1 * time.Second)
 
+	// Uncomment to send a test transaction
 	// if err := sendTransaction(validatorPrivKey); err != nil {
 	// 	panic(err)
 	// }
 
-	// collectionOwnerPrivKey := crypto.GeneratePrivateKey()
-	// collectionHash := createCollectionTx(collectionOwnerPrivKey)
-
-	// txSendTicker := time.NewTicker(1 * time.Second)
-	// go func() {
-	// 	for i := 0; i < 20; i++ {
-	// 		nftMinter(collectionOwnerPrivKey, collectionHash)
-
-	// 		<-txSendTicker.C
-	// 	}
-	// }()
-
 	select {}
+	
 }
 
-func sendTransaction(privKey crypto.PrivateKey) error {
-	toPrivKey := crypto.GeneratePrivateKey()
+func sendTransaction(privKey crypto_utils.PrivateKey) error {
+	toPrivKey := crypto_utils.GeneratePrivateKey()
 
-	tx := core.NewTransaction(nil)
+	tx := blockchain.NewTransaction(nil)
 	tx.To = toPrivKey.PublicKey()
 	tx.Value = 666
 
@@ -65,7 +54,7 @@ func sendTransaction(privKey crypto.PrivateKey) error {
 	}
 
 	buf := &bytes.Buffer{}
-	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+	if err := tx.Encode(blockchain.NewGobTxEncoder(buf)); err != nil {
 		panic(err)
 	}
 
@@ -76,11 +65,10 @@ func sendTransaction(privKey crypto.PrivateKey) error {
 
 	client := http.Client{}
 	_, err = client.Do(req)
-
 	return err
 }
 
-func makeServer(id string, pk *crypto.PrivateKey, addr string, seedNodes []string, apiListenAddr string) *network.Server {
+func makeServer(id string, pk *crypto_utils.PrivateKey, addr string, seedNodes []string, apiListenAddr string) *network.Server {
 	opts := network.ServerOpts{
 		APIListenAddr: apiListenAddr,
 		SeedNodes:     seedNodes,
@@ -97,16 +85,16 @@ func makeServer(id string, pk *crypto.PrivateKey, addr string, seedNodes []strin
 	return s
 }
 
-func createCollectionTx(privKey crypto.PrivateKey) types.Hash {
-	tx := core.NewTransaction(nil)
-	tx.TxInner = core.CollectionTx{
+func createCollectionTx(privKey crypto_utils.PrivateKey) types.Hash {
+	tx := blockchain.NewTransaction(nil)
+	tx.TxInner = blockchain.CollectionTx{
 		Fee:      200,
 		MetaData: []byte("chicken and egg collection!"),
 	}
 	tx.Sign(privKey)
 
 	buf := &bytes.Buffer{}
-	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+	if err := tx.Encode(blockchain.NewGobTxEncoder(buf)); err != nil {
 		panic(err)
 	}
 
@@ -121,10 +109,10 @@ func createCollectionTx(privKey crypto.PrivateKey) types.Hash {
 		panic(err)
 	}
 
-	return tx.Hash(core.TxHasher{})
+	return tx.Hash(blockchain.TxHasher{})
 }
 
-func nftMinter(privKey crypto.PrivateKey, collection types.Hash) {
+func nftMinter(privKey crypto_utils.PrivateKey, collection types.Hash) {
 	metaData := map[string]any{
 		"power":  8,
 		"health": 100,
@@ -137,8 +125,8 @@ func nftMinter(privKey crypto.PrivateKey, collection types.Hash) {
 		panic(err)
 	}
 
-	tx := core.NewTransaction(nil)
-	tx.TxInner = core.MintTx{
+	tx := blockchain.NewTransaction(nil)
+	tx.TxInner = blockchain.MintTx{
 		Fee:             200,
 		NFT:             util.RandomHash(),
 		MetaData:        metaBuf.Bytes(),
@@ -148,7 +136,7 @@ func nftMinter(privKey crypto.PrivateKey, collection types.Hash) {
 	tx.Sign(privKey)
 
 	buf := &bytes.Buffer{}
-	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+	if err := tx.Encode(blockchain.NewGobTxEncoder(buf)); err != nil {
 		panic(err)
 	}
 
@@ -162,4 +150,5 @@ func nftMinter(privKey crypto.PrivateKey, collection types.Hash) {
 	if err != nil {
 		panic(err)
 	}
+
 }

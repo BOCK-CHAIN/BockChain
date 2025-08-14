@@ -1,11 +1,11 @@
-package core
+package blockchain
 
 import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 
-	"github.com/anthdm/projectx/types"
+	"github.com/iPlatinuum/BockChain/types"
 )
 
 type Hasher[T any] interface {

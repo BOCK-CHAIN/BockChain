@@ -1,24 +1,24 @@
-package core
+package blockchain
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/anthdm/projectx/crypto"
-	"github.com/anthdm/projectx/types"
+	"github.com/iPlatinuum/BockChain/crypto_utils"
+	"github.com/iPlatinuum/BockChain/types"
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSendNativeTransferTamper(t *testing.T) {
 	bc := newBlockchainWithGenesis(t)
-	signer := crypto.GeneratePrivateKey()
+	signer := crypto_utils.GeneratePrivateKey()
 
 	block := randomBlock(t, uint32(1), getPrevBlockHash(t, bc, uint32(1)))
 	assert.Nil(t, block.Sign(signer))
 
-	privKeyBob := crypto.GeneratePrivateKey()
-	privKeyAlice := crypto.GeneratePrivateKey()
+	privKeyBob := crypto_utils.GeneratePrivateKey()
+	privKeyAlice := crypto_utils.GeneratePrivateKey()
 	amount := uint64(100)
 
 	accountBob := bc.accountState.CreateAccount(privKeyBob.PublicKey().Address())
@@ -31,7 +31,7 @@ func TestSendNativeTransferTamper(t *testing.T) {
 	tx.Sign(privKeyBob)
 	tx.hash = types.Hash{}
 
-	hackerPrivKey := crypto.GeneratePrivateKey()
+	hackerPrivKey := crypto_utils.GeneratePrivateKey()
 	tx.To = hackerPrivKey.PublicKey()
 
 	block.AddTransaction(tx)
@@ -43,13 +43,13 @@ func TestSendNativeTransferTamper(t *testing.T) {
 
 func TestSendNativeTransferInsuffientBalance(t *testing.T) {
 	bc := newBlockchainWithGenesis(t)
-	signer := crypto.GeneratePrivateKey()
+	signer := crypto_utils.GeneratePrivateKey()
 
 	block := randomBlock(t, uint32(1), getPrevBlockHash(t, bc, uint32(1)))
 	assert.Nil(t, block.Sign(signer))
 
-	privKeyBob := crypto.GeneratePrivateKey()
-	privKeyAlice := crypto.GeneratePrivateKey()
+	privKeyBob := crypto_utils.GeneratePrivateKey()
+	privKeyAlice := crypto_utils.GeneratePrivateKey()
 	amount := uint64(100)
 
 	accountBob := bc.accountState.CreateAccount(privKeyBob.PublicKey().Address())
@@ -79,13 +79,13 @@ func TestSendNativeTransferInsuffientBalance(t *testing.T) {
 func TestSendNativeTransferSuccess(t *testing.T) {
 	bc := newBlockchainWithGenesis(t)
 
-	signer := crypto.GeneratePrivateKey()
+	signer := crypto_utils.GeneratePrivateKey()
 
 	block := randomBlock(t, uint32(1), getPrevBlockHash(t, bc, uint32(1)))
 	assert.Nil(t, block.Sign(signer))
 
-	privKeyBob := crypto.GeneratePrivateKey()
-	privKeyAlice := crypto.GeneratePrivateKey()
+	privKeyBob := crypto_utils.GeneratePrivateKey()
+	privKeyAlice := crypto_utils.GeneratePrivateKey()
 	amount := uint64(100)
 
 	accountBob := bc.accountState.CreateAccount(privKeyBob.PublicKey().Address())

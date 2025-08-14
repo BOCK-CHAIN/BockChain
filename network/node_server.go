@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthdm/projectx/api"
-	"github.com/anthdm/projectx/core"
-	"github.com/anthdm/projectx/crypto"
-	"github.com/anthdm/projectx/types"
 	"github.com/go-kit/log"
+	"github.com/iPlatinuum/BockChain/api"
+	"github.com/iPlatinuum/BockChain/blockchain"
+	"github.com/iPlatinuum/BockChain/crypto_utils"
+	"github.com/iPlatinuum/BockChain/types"
 )
 
 var defaultBlockTime = 5 * time.Second
@@ -28,7 +28,7 @@ type ServerOpts struct {
 	RPCDecodeFunc RPCDecodeFunc
 	RPCProcessor  RPCProcessor
 	BlockTime     time.Duration
-	PrivateKey    *crypto.PrivateKey
+	PrivateKey    *crypto_utils.PrivateKey
 }
 
 type Server struct {
@@ -40,11 +40,11 @@ type Server struct {
 
 	ServerOpts
 	mempool     *TxPool
-	chain       *core.Blockchain
+	chain       *blockchain.Blockchain
 	isValidator bool
 	rpcCh       chan RPC
 	quitCh      chan struct{}
-	txChan      chan *core.Transaction
+	txChan      chan *blockchain.Transaction
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -59,16 +59,13 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		opts.Logger = log.With(opts.Logger, "addr", opts.ID)
 	}
 
-	chain, err := core.NewBlockchain(opts.Logger, genesisBlock())
+	chain, err := blockchain.NewBlockchain(opts.Logger, genesisBlock())
 	if err != nil {
 		return nil, err
 	}
 
-	// Channel being used to communicate between the JSON RPC server
-	// and the node that will process this message.
-	txChan := make(chan *core.Transaction)
+	txChan := make(chan *blockchain.Transaction)
 
-	// Only boot up the API server if the config has a valid port number.
 	if len(opts.APIListenAddr) > 0 {
 		apiServerCfg := api.ServerConfig{
 			Logger:     opts.Logger,
@@ -98,8 +95,6 @@ func NewServer(opts ServerOpts) (*Server, error) {
 
 	s.TCPTransport.peerCh = peerCh
 
-	// If we dont got any processor from the server options, we going to use
-	// the server as default.
 	if s.RPCProcessor == nil {
 		s.RPCProcessor = s
 	}
@@ -131,9 +126,7 @@ func (s *Server) bootstrapNetwork() {
 
 func (s *Server) Start() {
 	s.TCPTransport.Start()
-
 	time.Sleep(time.Second * 1)
-
 	s.bootstrapNetwork()
 
 	s.Logger.Log("msg", "accepting TCP connection on", "addr", s.ListenAddr, "id", s.ID)
@@ -143,7 +136,6 @@ free:
 		select {
 		case peer := <-s.peerCh:
 			s.peerMap[peer.conn.RemoteAddr()] = peer
-
 			go peer.readLoop(s.rpcCh)
 
 			if err := s.sendGetStatusMessage(peer); err != nil {
@@ -166,7 +158,7 @@ free:
 			}
 
 			if err := s.RPCProcessor.ProcessMessage(msg); err != nil {
-				if err != core.ErrBlockKnown {
+				if err != blockchain.ErrBlockKnown {
 					s.Logger.Log("error", err)
 				}
 			}
@@ -181,7 +173,6 @@ free:
 
 func (s *Server) validatorLoop() {
 	ticker := time.NewTicker(s.BlockTime)
-
 	s.Logger.Log("msg", "Starting validator loop", "blockTime", s.BlockTime)
 
 	for {
@@ -197,9 +188,9 @@ func (s *Server) validatorLoop() {
 
 func (s *Server) ProcessMessage(msg *DecodedMessage) error {
 	switch t := msg.Data.(type) {
-	case *core.Transaction:
+	case *blockchain.Transaction:
 		return s.processTransaction(t)
-	case *core.Block:
+	case *blockchain.Block:
 		return s.processBlock(t)
 	case *GetStatusMessage:
 		return s.processGetStatusMessage(msg.From, t)
@@ -210,7 +201,6 @@ func (s *Server) ProcessMessage(msg *DecodedMessage) error {
 	case *BlocksMessage:
 		return s.processBlocksMessage(msg.From, t)
 	}
-
 	return nil
 }
 
@@ -218,7 +208,7 @@ func (s *Server) processGetBlocksMessage(from net.Addr, data *GetBlocksMessage) 
 	s.Logger.Log("msg", "received getBlocks message", "from", from)
 
 	var (
-		blocks    = []*core.Block{}
+		blocks    = []*blockchain.Block{}
 		ourHeight = s.chain.Height()
 	)
 
@@ -228,15 +218,11 @@ func (s *Server) processGetBlocksMessage(from net.Addr, data *GetBlocksMessage) 
 			if err != nil {
 				return err
 			}
-
 			blocks = append(blocks, block)
 		}
 	}
 
-	blocksMsg := &BlocksMessage{
-		Blocks: blocks,
-	}
-
+	blocksMsg := &BlocksMessage{Blocks: blocks}
 	buf := new(bytes.Buffer)
 	if err := gob.NewEncoder(buf).Encode(blocksMsg); err != nil {
 		return err
@@ -248,21 +234,17 @@ func (s *Server) processGetBlocksMessage(from net.Addr, data *GetBlocksMessage) 
 	msg := NewMessage(MessageTypeBlocks, buf.Bytes())
 	peer, ok := s.peerMap[from]
 	if !ok {
-		return fmt.Errorf("peer %s not known", peer.conn.RemoteAddr())
+		return fmt.Errorf("peer %s not known", from)
 	}
-
 	return peer.Send(msg.Bytes())
 }
 
 func (s *Server) sendGetStatusMessage(peer *TCPPeer) error {
-	var (
-		getStatusMsg = new(GetStatusMessage)
-		buf          = new(bytes.Buffer)
-	)
+	getStatusMsg := new(GetStatusMessage)
+	buf := new(bytes.Buffer)
 	if err := gob.NewEncoder(buf).Encode(getStatusMsg); err != nil {
 		return err
 	}
-
 	msg := NewMessage(MessageTypeGetStatus, buf.Bytes())
 	return peer.Send(msg.Bytes())
 }
@@ -275,44 +257,36 @@ func (s *Server) broadcast(payload []byte) error {
 			fmt.Printf("peer send error => addr %s [err: %s]\n", netAddr, err)
 		}
 	}
-
 	return nil
 }
 
 func (s *Server) processBlocksMessage(from net.Addr, data *BlocksMessage) error {
 	s.Logger.Log("msg", "received BLOCKS!!!!!!!!", "from", from)
-
 	for _, block := range data.Blocks {
 		if err := s.chain.AddBlock(block); err != nil {
 			s.Logger.Log("error", err.Error())
 			return err
 		}
 	}
-
 	return nil
 }
 
 func (s *Server) processStatusMessage(from net.Addr, data *StatusMessage) error {
 	s.Logger.Log("msg", "received STATUS message", "from", from)
-
 	if data.CurrentHeight <= s.chain.Height() {
-		s.Logger.Log("msg", "cannot sync blockHeight to low", "ourHeight", s.chain.Height(), "theirHeight", data.CurrentHeight, "addr", from)
+		s.Logger.Log("msg", "cannot sync blockHeight too low", "ourHeight", s.chain.Height(), "theirHeight", data.CurrentHeight, "addr", from)
 		return nil
 	}
-
 	go s.requestBlocksLoop(from)
-
 	return nil
 }
 
 func (s *Server) processGetStatusMessage(from net.Addr, data *GetStatusMessage) error {
 	s.Logger.Log("msg", "received getStatus message", "from", from)
-
 	statusMessage := &StatusMessage{
 		CurrentHeight: s.chain.Height(),
 		ID:            s.ID,
 	}
-
 	buf := new(bytes.Buffer)
 	if err := gob.NewEncoder(buf).Encode(statusMessage); err != nil {
 		return err
@@ -323,106 +297,76 @@ func (s *Server) processGetStatusMessage(from net.Addr, data *GetStatusMessage) 
 
 	peer, ok := s.peerMap[from]
 	if !ok {
-		return fmt.Errorf("peer %s not known", peer.conn.RemoteAddr())
+		return fmt.Errorf("peer %s not known", from)
 	}
-
 	msg := NewMessage(MessageTypeStatus, buf.Bytes())
-
 	return peer.Send(msg.Bytes())
 }
 
-func (s *Server) processBlock(b *core.Block) error {
+func (s *Server) processBlock(b *blockchain.Block) error {
 	if err := s.chain.AddBlock(b); err != nil {
 		s.Logger.Log("error", err.Error())
 		return err
 	}
-
 	go s.broadcastBlock(b)
-
 	return nil
 }
 
-func (s *Server) processTransaction(tx *core.Transaction) error {
-	hash := tx.Hash(core.TxHasher{})
-
+func (s *Server) processTransaction(tx *blockchain.Transaction) error {
+	hash := tx.Hash(blockchain.TxHasher{})
 	if s.mempool.Contains(hash) {
 		return nil
 	}
-
 	if err := tx.Verify(); err != nil {
 		return err
 	}
-
-	// s.Logger.Log(
-	// 	"msg", "adding new tx to mempool",
-	// 	"hash", hash,
-	// 	"mempoolPending", s.mempool.PendingCount(),
-	// )
-
 	go s.broadcastTx(tx)
-
 	s.mempool.Add(tx)
-
 	return nil
 }
 
-// TODO: Find a way to make sure we dont keep syncing when we are at the highest
-// block height in the network.
-func (s *Server) requestBlocksLoop(peer net.Addr) error {
+func (s *Server) requestBlocksLoop(addr net.Addr) error {
 	ticker := time.NewTicker(3 * time.Second)
-
 	for {
 		ourHeight := s.chain.Height()
-
 		s.Logger.Log("msg", "requesting new blocks", "requesting height", ourHeight+1)
-
-		// In this case we are 100% sure that the node has blocks heigher than us.
 		getBlocksMessage := &GetBlocksMessage{
 			From: ourHeight + 1,
 			To:   0,
 		}
-
 		buf := new(bytes.Buffer)
 		if err := gob.NewEncoder(buf).Encode(getBlocksMessage); err != nil {
 			return err
 		}
-
 		s.mu.RLock()
 		defer s.mu.RUnlock()
 
-		msg := NewMessage(MessageTypeGetBlocks, buf.Bytes())
-		peer, ok := s.peerMap[peer]
+		peer, ok := s.peerMap[addr]
 		if !ok {
-			return fmt.Errorf("peer %s not known", peer.conn.RemoteAddr())
+			return fmt.Errorf("peer %s not known", addr)
 		}
-
-		if err := peer.Send(msg.Bytes()); err != nil {
-			s.Logger.Log("error", "failed to send to peer", "err", err, "peer", peer)
+		if err := peer.Send(NewMessage(MessageTypeGetBlocks, buf.Bytes()).Bytes()); err != nil {
+			s.Logger.Log("error", "failed to send to peer", "err", err, "peer", addr)
 		}
-
 		<-ticker.C
 	}
 }
 
-func (s *Server) broadcastBlock(b *core.Block) error {
+func (s *Server) broadcastBlock(b *blockchain.Block) error {
 	buf := &bytes.Buffer{}
-	if err := b.Encode(core.NewGobBlockEncoder(buf)); err != nil {
+	if err := b.Encode(blockchain.NewGobBlockEncoder(buf)); err != nil {
 		return err
 	}
-
 	msg := NewMessage(MessageTypeBlock, buf.Bytes())
-
 	return s.broadcast(msg.Bytes())
 }
 
-func (s *Server) broadcastTx(tx *core.Transaction) error {
+func (s *Server) broadcastTx(tx *blockchain.Transaction) error {
 	buf := &bytes.Buffer{}
-	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+	if err := tx.Encode(blockchain.NewGobTxEncoder(buf)); err != nil {
 		return err
 	}
-
 	msg := NewMessage(MessageTypeTx, buf.Bytes())
-
 	return s.broadcast(msg.Bytes())
 }
 
@@ -431,53 +375,38 @@ func (s *Server) createNewBlock() error {
 	if err != nil {
 		return err
 	}
-
-	// For now we are going to use all transactions that are in the pending pool
-	// Later on when we know the internal structure of our transaction
-	// we will implement some kind of complexity function to determine how
-	// many transactions can be included in a block.
 	txx := s.mempool.Pending()
-
-	block, err := core.NewBlockFromPrevHeader(currentHeader, txx)
+	block, err := blockchain.NewBlockFromPrevHeader(currentHeader, txx)
 	if err != nil {
 		return err
 	}
-
 	if err := block.Sign(*s.PrivateKey); err != nil {
 		return err
 	}
-
 	if err := s.chain.AddBlock(block); err != nil {
 		return err
 	}
-
-	// TODO(@anthdm): pending pool of tx should only reflect on validator nodes.
-	// Right now "normal nodes" does not have their pending pool cleared.
 	s.mempool.ClearPending()
-
 	go s.broadcastBlock(block)
-
 	return nil
 }
 
-func genesisBlock() *core.Block {
-	header := &core.Header{
+func genesisBlock() *blockchain.Block {
+	header := &blockchain.Header{
 		Version:   1,
 		DataHash:  types.Hash{},
 		Height:    0,
-		Timestamp: 000000,
+		Timestamp: 0,
 	}
-
-	b, _ := core.NewBlock(header, nil)
-
-	coinbase := crypto.PublicKey{}
-	tx := core.NewTransaction(nil)
+	b, _ := blockchain.NewBlock(header, nil)
+	coinbase := crypto_utils.PublicKey{}
+	tx := blockchain.NewTransaction(nil)
 	tx.From = coinbase
 	tx.To = coinbase
 	tx.Value = 10_000_000
 	b.Transactions = append(b.Transactions, tx)
 
-	privKey := crypto.GeneratePrivateKey()
+	privKey := crypto_utils.GeneratePrivateKey()
 	if err := b.Sign(privKey); err != nil {
 		panic(err)
 	}

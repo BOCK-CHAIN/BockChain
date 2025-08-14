@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/anthdm/projectx/core"
-	"github.com/anthdm/projectx/types"
+	"github.com/iPlatinuum/BockChain/blockchain"
+	"github.com/iPlatinuum/BockChain/types"
+
 	"github.com/go-kit/log"
 	"github.com/labstack/echo/v4"
 )
@@ -30,8 +31,7 @@ type Block struct {
 	Timestamp     int64
 	Validator     string
 	Signature     string
-
-	TxResponse TxResponse
+	TxResponse    TxResponse
 }
 
 type ServerConfig struct {
@@ -40,12 +40,12 @@ type ServerConfig struct {
 }
 
 type Server struct {
-	txChan chan *core.Transaction
+	txChan chan *blockchain.Transaction
 	ServerConfig
-	bc *core.Blockchain
+	bc *blockchain.Blockchain
 }
 
-func NewServer(cfg ServerConfig, bc *core.Blockchain, txChan chan *core.Transaction) *Server {
+func NewServer(cfg ServerConfig, bc *blockchain.Blockchain, txChan chan *blockchain.Transaction) *Server {
 	return &Server{
 		ServerConfig: cfg,
 		bc:           bc,
@@ -64,12 +64,11 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) handlePostTx(c echo.Context) error {
-	tx := &core.Transaction{}
+	tx := &blockchain.Transaction{}
 	if err := gob.NewDecoder(c.Request().Body).Decode(tx); err != nil {
 		return c.JSON(http.StatusBadRequest, APIError{Error: err.Error()})
 	}
 	s.txChan <- tx
-
 	return nil
 }
 
@@ -99,7 +98,6 @@ func (s *Server) handleGetBlock(c echo.Context) error {
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, APIError{Error: err.Error()})
 		}
-
 		return c.JSON(http.StatusOK, intoJSONBlock(block))
 	}
 
@@ -117,18 +115,18 @@ func (s *Server) handleGetBlock(c echo.Context) error {
 	return c.JSON(http.StatusOK, intoJSONBlock(block))
 }
 
-func intoJSONBlock(block *core.Block) Block {
+func intoJSONBlock(block *blockchain.Block) Block {
 	txResponse := TxResponse{
 		TxCount: uint(len(block.Transactions)),
 		Hashes:  make([]string, len(block.Transactions)),
 	}
 
 	for i := 0; i < int(txResponse.TxCount); i++ {
-		txResponse.Hashes[i] = block.Transactions[i].Hash(core.TxHasher{}).String()
+		txResponse.Hashes[i] = block.Transactions[i].Hash(blockchain.TxHasher{}).String()
 	}
 
 	return Block{
-		Hash:          block.Hash(core.BlockHasher{}).String(),
+		Hash:          block.Hash(blockchain.BlockHasher{}).String(),
 		Version:       block.Header.Version,
 		Height:        block.Header.Height,
 		DataHash:      block.Header.DataHash.String(),

@@ -1,16 +1,16 @@
-package core
+package blockchain
 
 import (
 	"testing"
 
-	"github.com/anthdm/projectx/crypto"
+	"github.com/iPlatinuum/BockChain/crypto_utils"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAccounState(t *testing.T) {
 	state := NewAccountState()
 
-	address := crypto.GeneratePrivateKey().PublicKey().Address()
+	address := crypto_utils.GeneratePrivateKey().PublicKey().Address()
 	account := state.CreateAccount(address)
 
 	assert.Equal(t, account.Address, address)
@@ -24,8 +24,8 @@ func TestAccounState(t *testing.T) {
 func TestTransferFailInsufficientBalance(t *testing.T) {
 	state := NewAccountState()
 
-	addressBob := crypto.GeneratePrivateKey().PublicKey().Address()
-	addressAlice := crypto.GeneratePrivateKey().PublicKey().Address()
+	addressBob := crypto_utils.GeneratePrivateKey().PublicKey().Address()
+	addressAlice := crypto_utils.GeneratePrivateKey().PublicKey().Address()
 
 	accountBob := state.CreateAccount(addressBob)
 	accountBob.Balance = 99
@@ -40,8 +40,8 @@ func TestTransferFailInsufficientBalance(t *testing.T) {
 func TestTransferSuccessEmpyToAccount(t *testing.T) {
 	state := NewAccountState()
 
-	addressBob := crypto.GeneratePrivateKey().PublicKey().Address()
-	addressAlice := crypto.GeneratePrivateKey().PublicKey().Address()
+	addressBob := crypto_utils.GeneratePrivateKey().PublicKey().Address()
+	addressAlice := crypto_utils.GeneratePrivateKey().PublicKey().Address()
 
 	accountBob := state.CreateAccount(addressBob)
 	accountBob.Balance = 100

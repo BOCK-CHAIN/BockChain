@@ -1,6 +1,6 @@
 package network
 
-import "github.com/anthdm/projectx/core"
+import "github.com/iPlatinuum/BockChain/blockchain"
 
 type GetBlocksMessage struct {
 	From uint32
@@ -9,7 +9,7 @@ type GetBlocksMessage struct {
 }
 
 type BlocksMessage struct {
-	Blocks []*core.Block
+	Blocks []*blockchain.Block
 }
 
 type GetStatusMessage struct{}

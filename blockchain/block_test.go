@@ -1,17 +1,17 @@
-package core
+package blockchain
 
 import (
 	"bytes"
 	"testing"
 	"time"
 
-	"github.com/anthdm/projectx/crypto"
-	"github.com/anthdm/projectx/types"
+	"github.com/iPlatinuum/BockChain/crypto_utils"
+	"github.com/iPlatinuum/BockChain/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSignBlock(t *testing.T) {
-	privKey := crypto.GeneratePrivateKey()
+	privKey := crypto_utils.GeneratePrivateKey()
 	b := randomBlock(t, 0, types.Hash{})
 
 	assert.Nil(t, b.Sign(privKey))
@@ -19,13 +19,13 @@ func TestSignBlock(t *testing.T) {
 }
 
 func TestVerifyBlock(t *testing.T) {
-	privKey := crypto.GeneratePrivateKey()
+	privKey := crypto_utils.GeneratePrivateKey()
 	b := randomBlock(t, 0, types.Hash{})
 
 	assert.Nil(t, b.Sign(privKey))
 	assert.Nil(t, b.Verify())
 
-	otherPrivKey := crypto.GeneratePrivateKey()
+	otherPrivKey := crypto_utils.GeneratePrivateKey()
 	b.Validator = otherPrivKey.PublicKey()
 	assert.NotNil(t, b.Verify())
 
@@ -53,7 +53,7 @@ func TestDecodeEncodeBlock(t *testing.T) {
 }
 
 func randomBlock(t *testing.T, height uint32, prevBlockHash types.Hash) *Block {
-	privKey := crypto.GeneratePrivateKey()
+	privKey := crypto_utils.GeneratePrivateKey()
 	tx := randomTxWithSignature(t)
 	header := &Header{
 		Version:       1,
