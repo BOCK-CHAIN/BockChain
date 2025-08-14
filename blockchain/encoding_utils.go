@@ -73,3 +73,5 @@ func NewGobBlockDecoder(r io.Reader) *GobBlockDecoder {
 func (dec *GobBlockDecoder) Decode(b *Block) error {
 	return gob.NewDecoder(dec.r).Decode(b)
 }
+
+

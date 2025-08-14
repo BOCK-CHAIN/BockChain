@@ -79,3 +79,5 @@ func (sig Signature) Verify(pubKey PublicKey, data []byte) bool {
 
 	return ecdsa.Verify(key, data, sig.R, sig.S)
 }
+
+

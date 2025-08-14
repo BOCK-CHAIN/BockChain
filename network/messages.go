@@ -20,3 +20,5 @@ type StatusMessage struct {
 	Version       uint32
 	CurrentHeight uint32
 }
+
+

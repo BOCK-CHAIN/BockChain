@@ -136,3 +136,5 @@ func CalculateDataHash(txx []*Transaction) (hash types.Hash, err error) {
 
 	return
 }
+
+

@@ -97,3 +97,5 @@ func init() {
 	gob.Register(CollectionTx{})
 	gob.Register(MintTx{})
 }
+
+

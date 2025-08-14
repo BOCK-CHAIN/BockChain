@@ -31,3 +31,5 @@ func TestKeypairSignVerifyFail(t *testing.T) {
 	assert.False(t, sig.Verify(otherPublicKey, msg))
 	assert.False(t, sig.Verify(publicKey, []byte("xxxxxx")))
 }
+
+

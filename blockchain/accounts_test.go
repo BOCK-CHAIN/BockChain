@@ -52,3 +52,5 @@ func TestTransferSuccessEmpyToAccount(t *testing.T) {
 	assert.Nil(t, state.Transfer(addressBob, addressAlice, amount))
 	assert.Equal(t, accountAlice.Balance, amount)
 }
+
+

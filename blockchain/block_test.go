@@ -71,3 +71,5 @@ func randomBlock(t *testing.T, height uint32, prevBlockHash types.Hash) *Block {
 
 	return b
 }
+
+

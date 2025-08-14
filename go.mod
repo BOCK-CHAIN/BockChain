@@ -1,12 +1,15 @@
 module github.com/iPlatinuum/BockChain
 
-go 1.18
+go 1.22
+
+toolchain go1.24.6
 
 require (
 	github.com/go-kit/log v0.2.1
 	github.com/labstack/echo/v4 v4.9.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.0
+	google.golang.org/protobuf v1.36.7
 )
 
 require (

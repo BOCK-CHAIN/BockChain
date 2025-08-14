@@ -105,3 +105,5 @@ func TestTxSortedMapRemove(t *testing.T) {
 	assert.Equal(t, m.Count(), 0)
 	assert.False(t, m.Contains(tx.Hash(core.TxHasher{})))
 }
+
+

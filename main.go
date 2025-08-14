@@ -152,3 +152,5 @@ func nftMinter(privKey crypto_utils.PrivateKey, collection types.Hash) {
 	}
 
 }
+
+

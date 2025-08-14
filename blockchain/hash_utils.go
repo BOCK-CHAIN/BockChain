@@ -33,3 +33,5 @@ func (TxHasher) Hash(tx *Transaction) types.Hash {
 
 	return types.Hash(sha256.Sum256(buf.Bytes()))
 }
+
+

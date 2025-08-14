@@ -123,3 +123,4 @@ func (t *TxSortedMap) Clear() {
 	t.lookup = make(map[types.Hash]*blockchain.Transaction)
 	t.txx.Clear()
 }
+

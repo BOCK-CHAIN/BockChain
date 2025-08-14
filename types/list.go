@@ -70,3 +70,5 @@ func (l List[T]) Last() T {
 func (l *List[T]) Len() int {
 	return len(l.Data)
 }
+
+

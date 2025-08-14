@@ -99,3 +99,5 @@ func (s *AccountState) Transfer(from, to types.Address, amount uint64) error {
 
 	return nil
 }
+
+

@@ -10,3 +10,5 @@ func AssertEqual(a, b any) {
 		log.Fatalf("ASSERTION: %+v != %+v", a, b)
 	}
 }
+
+
