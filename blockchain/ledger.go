@@ -59,10 +59,11 @@ func (bc *Blockchain) AddBlock(b *Block) error {
 	return bc.addBlockWithoutValidation(b)
 }
 
-func (bc *Blockchain) handleNativeTransfer(tx *Transaction) error {
-	fmt.Printf("[SMOOTH-LOG] Native token transfer: from=%s to=%s value=%d\n",
-		tx.From, tx.To, tx.Value)
-	return bc.accountState.Transfer(tx.From.Address(), tx.To.Address(), tx.Value)
+func (bc *Blockchain) handleNativeTransferWithFeeRecipient(tx *Transaction, feeRecipient types.Address) error {
+	fmt.Printf("[SMOOTH-LOG] Native token transfer: from=%s to=%s value=%d fee=%d recipient=%s\n",
+		tx.From, tx.To, tx.Value, tx.Fee, feeRecipient)
+
+	return bc.accountState.TransferWithFee(tx.From.Address(), tx.To.Address(), feeRecipient, tx.Value, tx.Fee)
 }
 
 func (bc *Blockchain) handleNativeNFT(tx *Transaction) error {
@@ -132,7 +133,13 @@ func (bc *Blockchain) Height() uint32 {
 	return uint32(len(bc.headers) - 1)
 }
 
-func (bc *Blockchain) handleTransaction(tx *Transaction) error {
+const FeeRate = 0.05
+
+func (bc *Blockchain) handleTransactionWithFeeRecipient(tx *Transaction, feeRecipient types.Address) error {
+	expectedFee := uint64(float64(tx.Value) * FeeRate)
+	if tx.Fee != expectedFee {
+		return fmt.Errorf("fee must be exactly 5%% of transaction amount: expected %d, got %d", expectedFee, tx.Fee)
+	}
 	if len(tx.Data) > 0 {
 		fmt.Printf("[SMOOTH-LOG] Executing contract code len=%d hash=%s\n",
 			len(tx.Data), tx.Hash(&TxHasher{}))
@@ -147,7 +154,7 @@ func (bc *Blockchain) handleTransaction(tx *Transaction) error {
 		}
 	}
 	if tx.Value > 0 {
-		if err := bc.handleNativeTransfer(tx); err != nil {
+		if err := bc.handleNativeTransferWithFeeRecipient(tx, feeRecipient); err != nil {
 			return err
 		}
 	}
@@ -157,10 +164,15 @@ func (bc *Blockchain) handleTransaction(tx *Transaction) error {
 func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 	bc.stateLock.Lock()
 	for i := 0; i < len(b.Transactions); i++ {
-		if err := bc.handleTransaction(b.Transactions[i]); err != nil {
+		tx := b.Transactions[i]
+
+		feeRecipient := b.Validator.Address()
+
+		if err := bc.handleTransactionWithFeeRecipient(tx, feeRecipient); err != nil {
 			fmt.Printf("[SMOOTH-LOG] Error processing tx: %v\n", err)
 			b.Transactions[i] = b.Transactions[len(b.Transactions)-1]
 			b.Transactions = b.Transactions[:len(b.Transactions)-1]
+			i--
 			continue
 		}
 	}

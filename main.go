@@ -39,15 +39,20 @@ func main() {
 	// }
 
 	select {}
-	
+
 }
 
 func sendTransaction(privKey crypto_utils.PrivateKey) error {
 	toPrivKey := crypto_utils.GeneratePrivateKey()
 
+	const FeeRate = 0.05
+	amount := uint64(1)
+	fee := uint64(float64(amount) * FeeRate)
+
 	tx := blockchain.NewTransaction(nil)
 	tx.To = toPrivKey.PublicKey()
-	tx.Value = 666
+	tx.Value = amount
+	tx.Fee = fee
 
 	if err := tx.Sign(privKey); err != nil {
 		return err
@@ -152,5 +157,3 @@ func nftMinter(privKey crypto_utils.PrivateKey, collection types.Hash) {
 	}
 
 }
-
-

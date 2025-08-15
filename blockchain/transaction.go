@@ -40,6 +40,7 @@ type Transaction struct {
 	From      crypto_utils.PublicKey
 	Signature *crypto_utils.Signature
 	Nonce     int64
+	Fee       uint64
 
 	// cached version of the tx data hash
 	hash types.Hash
@@ -97,5 +98,3 @@ func init() {
 	gob.Register(CollectionTx{})
 	gob.Register(MintTx{})
 }
-
-

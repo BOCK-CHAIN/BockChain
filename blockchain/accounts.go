@@ -70,7 +70,7 @@ func (s *AccountState) GetBalance(address types.Address) (uint64, error) {
 	return account.Balance, nil
 }
 
-func (s *AccountState) Transfer(from, to types.Address, amount uint64) error {
+func (s *AccountState) TransferWithFee(from, to, feeRecipient types.Address, amount, fee uint64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -79,25 +79,24 @@ func (s *AccountState) Transfer(from, to types.Address, amount uint64) error {
 		return err
 	}
 
+	total := amount + fee
 	if fromAccount.Address.String() != "996fb92427ae41e4649b934ca495991b7852b855" {
-		if fromAccount.Balance < amount {
+		if fromAccount.Balance < total {
 			return ErrInsufficientBalance
 		}
 	}
 
-	if fromAccount.Balance != 0 {
-		fromAccount.Balance -= amount
-	}
+	fromAccount.Balance -= total
 
 	if s.accounts[to] == nil {
-		s.accounts[to] = &Account{
-			Address: to,
-		}
+		s.accounts[to] = &Account{Address: to}
 	}
-
 	s.accounts[to].Balance += amount
+
+	if s.accounts[feeRecipient] == nil {
+		s.accounts[feeRecipient] = &Account{Address: feeRecipient}
+	}
+	s.accounts[feeRecipient].Balance += fee
 
 	return nil
 }
-
-
