@@ -34,13 +34,14 @@ type Transaction struct {
 	// Only used for native NFT logic
 	TxInner any
 	// Any arbitrary data for the VM
-	Data      []byte
-	To        crypto_utils.PublicKey
-	Value     uint64
-	From      crypto_utils.PublicKey
-	Signature *crypto_utils.Signature
-	Nonce     int64
-	Fee       uint64
+	Data       []byte
+	To         crypto_utils.PublicKey
+	Value      uint64
+	From       crypto_utils.PublicKey
+	Signature  *crypto_utils.Signature
+	Nonce      int64
+	Fee        uint64
+	IsCoinbase bool
 
 	// cached version of the tx data hash
 	hash types.Hash

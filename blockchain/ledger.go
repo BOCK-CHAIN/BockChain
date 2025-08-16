@@ -166,6 +166,12 @@ func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 	for i := 0; i < len(b.Transactions); i++ {
 		tx := b.Transactions[i]
 
+		if tx.IsCoinbase {
+			// Coinbase transaction: directly credit the recipient (validator)
+			bc.accountState.Credit(tx.To, tx.Value)
+			continue
+		}
+
 		feeRecipient := b.Validator.Address()
 
 		if err := bc.handleTransactionWithFeeRecipient(tx, feeRecipient); err != nil {

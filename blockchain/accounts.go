@@ -23,8 +23,38 @@ func (a *Account) String() string {
 }
 
 type AccountState struct {
+	balances map[types.Address]uint64
 	mu       sync.RWMutex
 	accounts map[types.Address]*Account
+	lock     sync.RWMutex
+}
+
+func (s *AccountState) Credit(addr types.Address, amount uint64) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	acc, ok := s.accounts[addr]
+	if !ok {
+		acc = s.CreateAccount(addr)
+	}
+	acc.Balance += amount
+}
+
+func (s *AccountState) Debit(addr types.Address, amount uint64) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	acc, ok := s.accounts[addr]
+	if !ok {
+		return ErrAccountNotFound
+	}
+
+	if acc.Balance < amount {
+		return ErrInsufficientBalance
+	}
+
+	acc.Balance -= amount
+	return nil
 }
 
 func NewAccountState() *AccountState {
@@ -71,32 +101,14 @@ func (s *AccountState) GetBalance(address types.Address) (uint64, error) {
 }
 
 func (s *AccountState) TransferWithFee(from, to, feeRecipient types.Address, amount, fee uint64) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	fromAccount, err := s.getAccountWithoutLock(from)
-	if err != nil {
-		return err
-	}
-
 	total := amount + fee
-	if fromAccount.Address.String() != "996fb92427ae41e4649b934ca495991b7852b855" {
-		if fromAccount.Balance < total {
-			return ErrInsufficientBalance
+	if from.String() != "996fb92427ae41e4649b934ca495991b7852b855" { // maybe special exempt addr
+		if err := s.Debit(from, total); err != nil {
+			return err
 		}
 	}
 
-	fromAccount.Balance -= total
-
-	if s.accounts[to] == nil {
-		s.accounts[to] = &Account{Address: to}
-	}
-	s.accounts[to].Balance += amount
-
-	if s.accounts[feeRecipient] == nil {
-		s.accounts[feeRecipient] = &Account{Address: feeRecipient}
-	}
-	s.accounts[feeRecipient].Balance += fee
-
+	s.Credit(to, amount)
+	s.Credit(feeRecipient, fee)
 	return nil
 }

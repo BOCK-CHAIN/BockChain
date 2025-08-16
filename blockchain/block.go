@@ -38,28 +38,12 @@ type Block struct {
 	hash types.Hash
 }
 
-func NewBlock(h *Header, txx []*Transaction) (*Block, error) {
+func NewBlock(h *Header, txs []*Transaction, validator crypto_utils.PublicKey) (*Block, error) {
 	return &Block{
 		Header:       h,
-		Transactions: txx,
+		Transactions: txs,
+		Validator:    validator,
 	}, nil
-}
-
-func NewBlockFromPrevHeader(prevHeader *Header, txx []*Transaction) (*Block, error) {
-	dataHash, err := CalculateDataHash(txx)
-	if err != nil {
-		return nil, err
-	}
-
-	header := &Header{
-		Version:       1,
-		Height:        prevHeader.Height + 1,
-		DataHash:      dataHash,
-		PrevBlockHash: BlockHasher{}.Hash(prevHeader),
-		Timestamp:     time.Now().UnixNano(),
-	}
-
-	return NewBlock(header, txx)
 }
 
 func (b *Block) AddTransaction(tx *Transaction) {
@@ -137,4 +121,36 @@ func CalculateDataHash(txx []*Transaction) (hash types.Hash, err error) {
 	return
 }
 
+func createCoinbaseTx(recipient types.Address, reward uint64) *Transaction {
+	return &Transaction{
+		To:         recipient,
+		Value:      reward,
+		Fee:        0,
+		IsCoinbase: true,
+	}
+}
 
+func ProposeBlockWithReward(
+	prevHeader *Header,
+	userTxs []*Transaction,
+	validator crypto_utils.PublicKey,
+	reward uint64,
+) (*Block, error) {
+	coinbaseTx := createCoinbaseTx(validator.Address(), reward)
+	txs := append([]*Transaction{coinbaseTx}, userTxs...)
+
+	dataHash, err := CalculateDataHash(txs)
+	if err != nil {
+		return nil, err
+	}
+
+	header := &Header{
+		Version:       1,
+		Height:        prevHeader.Height + 1,
+		DataHash:      dataHash,
+		PrevBlockHash: BlockHasher{}.Hash(prevHeader),
+		Timestamp:     time.Now().UnixNano(),
+	}
+
+	return NewBlock(header, txs, validator)
+}
